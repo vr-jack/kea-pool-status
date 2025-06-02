@@ -4,6 +4,7 @@ The version of Kea (2.6.2) that was tested against appears to combine the pools 
 
 Example output:
 
+```
 Name                Network                   Used     Total
 ------------------------------------------------------------
 Unshared Subnets
@@ -28,3 +29,4 @@ mgmt-networks
 test-networks
                     192.168.88.0/24              2        11
                     Total                        2        11
+```
