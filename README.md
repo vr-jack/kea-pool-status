@@ -1,6 +1,6 @@
 Very basic script. Haven't added any support for tls or auth. It loops through the subnets and the shared subnets to list the pool usage/total allocated.
 
-The version of Kea (2.6.2) that was tested against appears to combine the pools into a single pool for the purpose of statistics. The script checks to see if other pool indexes exist just in case it changes.
+If you give a pool-id to pools, it will show them individually. Pools without ids get combined as pool-id 0 and are displayed combined.
 
 Example output:
 
@@ -27,6 +27,7 @@ mgmt-networks
                     10.0.16.0/20                 0      3838
                     Total                        0      3838
 test-networks
-                    192.168.88.0/24              2        11
+                    192.168.88.0/24-1            1         4
+                    192.168.88.0/24-2            1         7
                     Total                        2        11
 ```
