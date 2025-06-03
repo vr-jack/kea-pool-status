@@ -13,6 +13,8 @@ def process_subnets(subnets,totals=False):
   for subnet in subnets:
     if 'pools' in subnet:
       defaultprinted = False
+      firstpool = True
+      subnetprefix = f"subnet[{str(subnet['id'])}].pool["
       for pool in subnet['pools']:
         if 'pool-id' in pool:
           pool_id=pool['pool-id']
@@ -22,17 +24,34 @@ def process_subnets(subnets,totals=False):
           network=subnet['subnet']
         else:
           network=f"{subnet['subnet']}-{pool_id}"
-        subnetstr=f"subnet[{str(subnet['id'])}].pool[{str(pool_id)}]"
+
+        subnetstr=f"{subnetprefix}{str(pool_id)}]"
+        # Likely not needed, but can't hurt to check
         if subnetstr + '.assigned-addresses' in data[0]['arguments']:
+          # Excludes reprinting multiple pool-id 0 records
           if pool_id != 0 or not defaultprinted:
-            allused += data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]
-            alltotal += data[0]['arguments'][subnetstr + '.total-addresses'][0][0]
-            print(f"{'':20}{network:20}{data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]:>10}{data[0]['arguments'][subnetstr + '.total-addresses'][0][0]:>10}")
+            used = data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]
+            total = data[0]['arguments'][subnetstr + '.total-addresses'][0][0]
+            # Check for bug where an address might be misplaced in pool 0 stat
+            # Seems to occur on kea restart and puts first binding in pool 0
+            # stat but only when pool 0 doesn't exist
+            if (firstpool and pool_id != 0 and
+                f"{subnetprefix}0].total-addresses" not in
+                data[0]['arguments'] and f"{subnetprefix}0].assigned-addresses"
+                in data[0]['arguments']):
+              bugused = data[0]['arguments'][
+                subnetprefix + '0].assigned-addresses'][0][0]
+              print(f"{'':20}{subnet['subnet']:20}{bugused:>10}{'BUG':>10}")
+              allused += bugused
+            # End bug code
+            alltotal += total
+            allused += used
+            print(f"{'':20}{network:20}{used:>10}{total:>10}")
           if pool_id == 0:
             defaultprinted = True
+        firstpool = False
   if totals:
     print(f"{'':20}{'Total':20}{allused:>10}{alltotal:>10}")
-
 
 
 try:
