@@ -7,6 +7,32 @@ url = 'http://127.0.0.1:8000/'
 config = {'service': [ 'dhcp4' ], 'command': 'config-get', 'arguments': ''}
 data = {'service': [ 'dhcp4' ], 'command': 'statistic-get-all', 'arguments': ''}
 
+def process_subnets(subnets,totals=False):
+  allused=0
+  alltotal=0
+  for subnet in subnets:
+    if 'pools' in subnet:
+      defaultprinted = False
+      for pool in subnet['pools']:
+        if 'pool-id' in pool:
+          pool_id=pool['pool-id']
+        else:
+          pool_id=0
+        if pool_id == 0:
+          network=subnet['subnet']
+        else:
+          network=f"{subnet['subnet']}-{pool_id}"
+        subnetstr=f"subnet[{str(subnet['id'])}].pool[{str(pool_id)}]"
+        if subnetstr + '.assigned-addresses' in data[0]['arguments']:
+          if pool_id != 0 or not defaultprinted:
+            allused += data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]
+            alltotal += data[0]['arguments'][subnetstr + '.total-addresses'][0][0]
+            print(f"{'':20}{network:20}{data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]:>10}{data[0]['arguments'][subnetstr + '.total-addresses'][0][0]:>10}")
+          if pool_id == 0:
+            defaultprinted = True
+  print(f"{'':20}{'Total':20}{allused:>10}{alltotal:>10}")
+
+
 try:
   response = requests.post(url, json=config)
 
@@ -36,36 +62,10 @@ print('-' * 60)
 
 if 'subnet4' in config[0]['arguments']['Dhcp4']:
   print(f"{'Unshared Subnets':20}")
-  for subnet in config[0]['arguments']['Dhcp4']['subnet4']:
-    if 'pools' in subnet:
-      for idx, pool in enumerate(subnet['pools']):
-        if idx == 0:
-          network=subnet['subnet']
-        else:
-          network=f"{subnet['subnet']}-{idx+1}"
-        subnetstr=f"subnet[{str(subnet['id'])}].pool[{str(idx)}]"
-        if subnetstr + '.assigned-addresses' in data[0]['arguments']:
-          print(f"{'':20}{network:20}{data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]:>10}{data[0]['arguments'][subnetstr + '.total-addresses'][0][0]:>10}")
+  process_subnets(config[0]['arguments']['Dhcp4']['subnet4'])
 
 if 'shared-networks' in config[0]['arguments']['Dhcp4']:
   for sharednet in config[0]['arguments']['Dhcp4']['shared-networks']:
     print(f"{sharednet['name']:20}")
-    allused=0
-    alltotal=0
     if 'subnet4' in sharednet:
-      for subnet in sharednet['subnet4']:
-        if 'pools' in subnet:
-          for idx, pool in enumerate(subnet['pools']):
-            if idx == 0:
-              network=subnet['subnet']
-            else:
-              network=f"{subnet['subnet']}-{idx+1}"
-            subnetstr=f"subnet[{str(subnet['id'])}].pool[{str(idx)}]"
-            if subnetstr + '.assigned-addresses' in data[0]['arguments']:
-              allused += data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]
-              alltotal += data[0]['arguments'][subnetstr + '.total-addresses'][0][0]
-              print(f"{'':20}{network:20}{data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]:>10}{data[0]['arguments'][subnetstr + '.total-addresses'][0][0]:>10}")
-    print(f"{'':20}{'Total':20}{allused:>10}{alltotal:>10}")
-
-
-
+      process_subnets(sharednet['subnet4'],True)
