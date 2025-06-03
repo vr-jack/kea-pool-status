@@ -30,7 +30,9 @@ def process_subnets(subnets,totals=False):
             print(f"{'':20}{network:20}{data[0]['arguments'][subnetstr + '.assigned-addresses'][0][0]:>10}{data[0]['arguments'][subnetstr + '.total-addresses'][0][0]:>10}")
           if pool_id == 0:
             defaultprinted = True
-  print(f"{'':20}{'Total':20}{allused:>10}{alltotal:>10}")
+  if totals:
+    print(f"{'':20}{'Total':20}{allused:>10}{alltotal:>10}")
+
 
 
 try:
